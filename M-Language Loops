@@ -1,0 +1,15 @@
+(Amount as number, Interest as number, Period as number) =>
+
+let
+    //Amount = 1000,
+    //Interest = 0.01,
+    //Period = 12,
+    Calculation = List.Generate(
+        ()=> [n = 0, s = Amount],
+        each _[n] <= Period,
+        each [n = [n] + 1 , s = [s] * (1 + Interest)],
+        each { [n] , Number.Round([s],2)}
+    ),
+    Table = #table(type table[n=number, Amount = number], Calculation)
+in
+    Table
