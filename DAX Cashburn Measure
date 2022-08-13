@@ -1,0 +1,54 @@
+Total Cash Burn = 
+VAR ValorPadrao = SUM(Base_Cashburn[Valor])
+VAR Receitas = 
+    CALCULATE(SUM(Base_Cashburn[Valor]),
+        'DePara Cashburn'[Cash Burn]="1. Entradas Operacionais",
+        REMOVEFILTERS('DePara Cashburn'[Índice Cash Burn]))
+VAR Despesas = 
+    CALCULATE(SUM(Base_Cashburn[Valor]),
+        'DePara Cashburn'[Cash Burn]="2. Saídas Operacionais",
+        REMOVEFILTERS('DePara Cashburn'[Índice Cash Burn]))
+VAR ResultadoFinanceiro = 
+    CALCULATE(SUM(Base_Cashburn[Valor]),
+        'DePara Cashburn'[Cash Burn]="3. Resultado Financeiro",
+        REMOVEFILTERS('DePara Cashburn'[Índice Cash Burn]))
+VAR ResultadoIntercompany = 
+    CALCULATE(SUM(Base_Cashburn[Valor]),
+        'DePara Cashburn'[Cash Burn]="4. Resultado de Intercompany/Aportes",
+        REMOVEFILTERS('DePara Cashburn'[Índice Cash Burn]))
+VAR CaixaOp = 
+    CALCULATE(SUM(Base_Cashburn[Valor]),
+        'DePara Cashburn'[Cash Burn]="1. Entradas Operacionais"
+        ||'DePara Cashburn'[Cash Burn]="2. Saídas Operacionais"
+        ||'DePara Cashburn'[Cash Burn]="3. Resultado Financeiro",
+        REMOVEFILTERS('DePara Cashburn'[Índice Cash Burn]))
+VAR ResultadoFinanciamentos = 
+    CALCULATE(SUM(Base_Cashburn[Valor]),
+        'DePara Cashburn'[Cash Burn]="5. Financiamentos",
+        REMOVEFILTERS('DePara Cashburn'[Índice Cash Burn]))
+VAR SaldoInicial = 
+    CALCULATE(SUM(Base_CashBurn[Valor]),
+        'DePara Cashburn'[Cash Burn]="6. Saldo Inicial",
+         REMOVEFILTERS('DePara Cashburn'[Índice Cash Burn]))
+    
+VAR OrdGrupo = SELECTEDVALUE('DePara Cashburn'[Índice Cash Burn])
+VAR SwitchVar = SWITCH(OrdGrupo,
+		100, [Entradas Operacionais],
+        150,Receitas,
+		200,[Saídas Operacionais],
+        250,Despesas,
+		300,[Resultado Financeiro],
+        350,ResultadoFinanceiro,
+		450,CaixaOp ,
+		500,[Resultado de Intercompany/Aportes],
+        550,ResultadoIntercompany,
+        600,[Resultado Financiamento],
+		650,ResultadoFinanciamentos,
+        750,(Receitas+Despesas+ResultadoFinanceiro+ResultadoIntercompany+ResultadoFinanciamentos),
+        800,[Saldo Inicial],
+        850,SaldoInicial,
+        950,(SaldoInicial+Receitas+Despesas+ResultadoFinanceiro+ResultadoIntercompany),
+		    ValorPadrao	)
+            
+RETURN
+SwitchVar
