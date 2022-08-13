@@ -1,0 +1,25 @@
+let getData = (page) => 
+    let
+        body = "{
+            ""call"": ""ListarContasReceber"",
+            ""app_key"": ""1301185365480"",
+            ""app_secret"": ""type secret"",
+            ""param"": [{
+                ""pagina"": " & Number.ToText(page) & ",
+                ""registros_por_pagina"": " & Number.ToText(20) & ",
+                ""apenas_importado_api"": ""N""
+            }]
+        }",
+        request = 
+        Json.Document(
+            Web.Contents("https://app.omie.com.br/api/v1/financas/contareceber/", 
+                [
+                    Headers=[#"Content-Type" = "application/json"],
+                    Content = Text.ToBinary(body)
+                ]
+            )
+        )
+in
+    request
+in
+getData
