@@ -1,0 +1,9 @@
+(p as number) =>
+let
+    Site = Web.Contents(
+        "https://exemplos.databinteligencia.com.br/pedidos/?p=" & Text.From(p)
+        ),
+    Content = Web.Page(Site),
+    Table = try Content{[Source = "Table"]}[Data] otherwise null
+in
+    Table
