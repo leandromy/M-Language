@@ -1,0 +1,37 @@
+let
+        iterations = 100,
+        url = "https://graph.facebook.com/v12.0/me?fields=adaccounts{name}&access_token=TypeTokenCode",
+
+        FnGetOnePage = (url) as record =>
+            let
+                Source = Json.Document(Web.Contents(url)),
+                data = try Source[adaccounts][data] otherwise null,
+                next = try Source[adaccounts][paging][next] otherwise null,
+                res = [Data=data, Next=next]
+            in
+                res, 
+        GeneratedList =
+        List.Generate(
+        ()=>[i=0, res = FnGetOnePage(url)],
+        each [i] < iterations and [res][Data]<>null,
+        each [i=[i]+1, res = FnGetOnePage([res][Next])],
+        each [res][Data]),
+    #"Convertido para Tabela" = Table.FromList(GeneratedList, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Column1 Expandido" = Table.ExpandListColumn(#"Convertido para Tabela", "Column1"),
+    #"Column1 Expandido1" = Table.ExpandRecordColumn(#"Column1 Expandido", "Column1", {"name", "id"}, {"name", "id"}),
+    #"Tipo Alterado" = Table.TransformColumnTypes(#"Column1 Expandido1",{{"id", type text}, {"name", type text}}),
+    #"Linhas Filtradas2" = Table.SelectRows(#"Tipo Alterado", each ([name] = "WHF - Vitta - Ribeirão Preto Plus")),
+    #"Função Personalizada Invocada" = Table.AddColumn(#"Linhas Filtradas2", "Fn_Campains", each Fn_Campaigns([id])),
+    #"Fn_Campains Expandido" = Table.ExpandTableColumn(#"Função Personalizada Invocada", "Fn_Campains", {"id", "name", "account_id", "lifetime_budget"}, {"id.1", "name.1", "account_id", "lifetime_budget"}),
+    #"Colunas Renomeadas" = Table.RenameColumns(#"Fn_Campains Expandido",{{"name.1", "Nome Campanha"}, {"account_id", "Id Conta"}, {"id.1", "Id Campanha"}}),
+    #"Tipo Alterado1" = Table.TransformColumnTypes(#"Colunas Renomeadas",{{"Id Campanha", type text}}),
+    #"Linhas Filtradas" = Table.SelectRows(#"Tipo Alterado1", each [Id Campanha] <> null and [Id Campanha] <> ""),
+    #"Função Personalizada Invocada1" = Table.AddColumn(#"Linhas Filtradas", "Fn_Insight", each Function.InvokeAfter(()=>  Fn_Insight([Id Campanha]), #duration(0,0,0,2))),
+    #"Fn_Insight Expandido" = Table.ExpandTableColumn(#"Função Personalizada Invocada1", "Fn_Insight", {"spend", "impressions", "cpm", "cpc", "actions", "date_start", "date_stop"}, {"spend", "impressions", "cpm", "cpc", "actions", "date_start", "date_stop"}),
+    #"actions Expandido" = Table.ExpandListColumn(#"Fn_Insight Expandido", "actions"),
+    #"actions Expandido1" = Table.ExpandRecordColumn(#"actions Expandido", "actions", {"action_type", "value"}, {"action_type", "value"}),
+    #"Tipo Alterado2" = Table.TransformColumnTypes(#"actions Expandido1",{{"value", type number}}),
+    #"Linhas Filtradas1" = Table.SelectRows(#"Tipo Alterado2", each ([action_type] = "lead")),
+    #"Coluna em pivô" = Table.Pivot(#"Linhas Filtradas1", List.Distinct(#"Linhas Filtradas1"[action_type]), "action_type", "value", List.Sum)
+in
+    #"Coluna em pivô"
