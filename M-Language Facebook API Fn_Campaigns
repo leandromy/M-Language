@@ -1,0 +1,27 @@
+let
+FnAcount = (IdCampaigns) =>    
+    let
+            iterations = 100,
+            url = "https://graph.facebook.com/v12.0/"&IdCampaigns&"/insights?time_range[since]=2022-01-01&time_range[until]=2022-01-31&time_increment=1&fields=spend,impressions,cpm,cpc,actions&access_token=EAAF1Lamq6KoBAPg4KCXIGdUVea4sVTCJP9jAGo8t7nVPlpfbd9gdy4lcQp3caYR50uwwhGe0HRyihfBWNuctf6MfKPPkFdgWfaG1HvhZBb7VLMY74x18oBERAwMrvAr8fDRPD0STB0a9YV6L0peHOBC9gZBw3ZBZAgYqXoCVYvOmXOo1DR5F",
+
+            FnGetOnePage = (url) as record =>
+                let
+                    Source = Json.Document(Web.Contents(url)),
+                    data = try Source[data] otherwise null,
+                    next = try Source[paging][next] otherwise null,
+                    res = [Data=data, Next=next]
+                in
+                    res, 
+            GeneratedList =
+            List.Generate(
+            ()=>[i=0, res = FnGetOnePage(url)],
+            each [i] < iterations and [res][Data]<>null,
+            each [i=[i]+1, res = FnGetOnePage([res][Next])],
+            each [res][Data]),
+        #"Convertido para Tabela" = Table.FromList(GeneratedList, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+        #"Column1 Expandido" = Table.ExpandListColumn(#"Convertido para Tabela", "Column1"),
+        #"Column1 Expandido1" = Table.ExpandRecordColumn(#"Column1 Expandido", "Column1", {"spend", "impressions", "cpm", "cpc", "actions", "date_start", "date_stop"}, {"spend", "impressions", "cpm", "cpc", "actions", "date_start", "date_stop"})
+    in
+        #"Column1 Expandido1"
+in
+    FnAcount
