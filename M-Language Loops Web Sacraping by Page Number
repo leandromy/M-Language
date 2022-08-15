@@ -1,0 +1,10 @@
+let
+    Orders = List.Generate(
+        ()=> [p = 1, t = fxSearchOrders(p) ],
+        each [t] <> null,
+        each [p = [p] + 1 , t = fxSearchOrders(p)],
+        each [t]
+    ),
+    Table = Table.Combine(Orders)
+in
+    Table
