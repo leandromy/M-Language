@@ -1,0 +1,43 @@
+let
+        body= 
+            "{
+            ""startDateIntervalBegin"": ""2021-01-01"",
+            ""startDateIntervalEnd"": ""2022-07-31"",
+            ""active"": ""false"",
+            ""recordsPerPage"": ""100"",
+            ""pageNumber"": " & Number.ToText(1) &",
+            ""formFieldNames"": [""solucao_nps""],
+            ""formFieldNames"": [""melhoria_nps""],
+            ""formFieldNames"": [""escala_nps""],
+            ""formFieldNames"": [""msg_nps""],
+            }",
+        request =
+            Json.Document(
+                Web.Contents("https://bildvitta.orquestrabpm.com.br/api/2/instances/report/count",
+                    [
+                    Headers=
+                        [
+                        Authorization="Bearer "& Token,
+                        #"Content-Type"= "application/json",
+                        useCache= "true"
+                        ],
+                    Content = Text.ToBinary(body)
+                    ]
+                )
+            ),
+    countpage = Number.RoundUp(request[count]/100),
+    ListaPaginas = Table.FromList(List.Generate(() =>1, each _ <= countpage , each _+1), Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Colunas Renomeadas" = Table.RenameColumns(ListaPaginas,{{"Column1", "page"}}),
+    #"Tipo Alterado" = Table.TransformColumnTypes(#"Colunas Renomeadas",{{"page", Int64.Type}}),
+    #"Função Personalizada Invocada" = Table.AddColumn(#"Tipo Alterado", "getData", each #"POST-instances"([page])),
+    #"Erros Removidos" = Table.RemoveRowsWithErrors(#"Função Personalizada Invocada", {"getData"}),
+    #"getData Expandido" = Table.ExpandListColumn(#"Erros Removidos", "getData"),
+    #"getData Expandido1" = Table.ExpandRecordColumn(#"getData Expandido", "getData", 
+        {"id", "requestName", "flowResult", "startDateTime", "endDateTime", "leadTimeInDays", "flow.id", "flow.name", "formFields.name", "formFields.value", "formFields.row", "requester.name", "requester.team"}, 
+        {"id", "requestName", "flowResult", "startDateTime", "endDateTime", "leadTimeInDays", "flow.id", "flow.name", "formFields.name", "formFields.value", "formFields.row", "requester.name", "requester.team"}
+    ),
+    #"Tipo Alterado1" = Table.TransformColumnTypes(#"getData Expandido1",
+        {{"startDateTime", type datetime}, {"endDateTime", type datetime}, {"leadTimeInDays", type number}, {"id", type text}, {"requestName", type text}, {"flow.id", type text}, {"flow.name", type text}, {"requester.name", type text}}
+    )
+in
+    #"Tipo Alterado1"
